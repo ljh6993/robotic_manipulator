@@ -1,0 +1,99 @@
+
+clear all; 
+clc;
+figure
+hold on 
+axis([-40 65 -50 50 0 50])
+xlabel('x axis')
+ylabel('y axis')
+zlabel('z axis')
+% the  obstacle is in pisitions [0,0,25];[-10,-10,30];[20,30,10]
+% make all this sphere with a radiu of 3
+[x,y,z] = sphere(20);
+surf(3*x+0,3*y+0,3*z+25);
+surf(3*x-10,3*y-10,3*z+30);
+surf(3*x+20,3*y+30,3*z+10);
+% path planning
+
+
+%set variable e for the parabolic well potential constant
+e{1}=1;
+e{2}=1;
+e{3}=1;
+
+%set the range d to be 1 for attractive force
+d=10;
+% set the variable for repulsive force
+n{1}=20;
+n{2}=20;
+n{3}=20;
+% define a radius of influence p0 of an obstacle
+p0=10;
+
+
+
+% assign a starting point to be [60 0 5]
+Ts=[60 0 5];
+% the ending point is [-20 0 30]
+Tf=[-20 0 30];
+
+%using inverse to get the qs and qf
+qs=invkinRPR(Ts);
+qcurr=qs;
+qf=invkinRPR(Tf);
+%assign a starting point to be qs=[-pi/2,10,0]
+a1=qs(1);
+b1=qs(2);
+c1=qs(3);
+[x,y,z]=sphere(10);
+l2=30;l3=30;
+surf(x-sin(a1)*(l3*cos(c1)+l2), y+cos(a1)*(l3*cos(c1)+l2),z+abs(l3*sin(c1)+b1));
+%the ending point is qf=[pi/2,5,pi/2]
+a2=qf(1);
+b2=qf(2);
+c2=qf(3);
+surf(x-sin(a2)*(l3*cos(c2)+l2),y+cos(a2)*(l3*cos(c2)+l2),z+abs(l3*sin(c2)+b2));
+
+
+
+%store values in steps matrix and keep track using counter 
+count = 1;
+steps = [];
+steps(count,:)= qcurr;
+ 
+% region of convergence 
+range=5.5;
+%step size of ith interation
+stepsize=0.05;
+ [null,null,T]=fkinRPR(qcurr);
+ o=T(1:3,4);
+% 
+% % [null,null,T1]=fkinRPR(qf);
+% % o1=T1(1:3,4);
+[null,null,T1]=fkinRPR(qf);
+ o1=T1(1:3,4);
+for i= 1:1000
+    ttorque= potentialfield(qcurr,qf,e,d,n,p0);
+    qstep = stepsize*transpose(ttorque/norm(ttorque)); 
+    qtemp = qcurr + qstep;    
+    steps(count,:) = qtemp;
+    count = count + 1;
+    qcurr = qtemp;
+end
+path1=[];
+path2=[];
+path3=[];
+for i=1:size(steps)
+
+
+    [null,null,T]=fkinRPR(steps(i,:));
+    o=T(1:3,4);
+    path1(i,:)=[i*0.01,o(1)];
+    path2(i,:)=[i*0.01,o(2)];
+    path3(i,:)=[i*0.01,o(3)];
+    plot3(o(1),o(2),o(3),'y*');
+    %plot the 03 point
+   
+end
+
+
